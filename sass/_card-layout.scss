@@ -1,0 +1,12 @@
+@import 'colors';
+
+
+
+.card {
+	transition: box-shadow 10s;
+	width: 30%;
+	margin: 1%;
+	box-shadow: $box-shadow;
+	background-color: $lightGrey;
+	text-align: center;
+}
