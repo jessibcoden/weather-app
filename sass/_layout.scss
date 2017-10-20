@@ -1,0 +1,18 @@
+@import 'colors';
+
+
+body {
+	background-color: $bobBlue;
+}
+
+.current-condition  {
+	display: flex;
+	flex-flow: row wrap;
+	justify-content: center;
+}
+
+.forecast {
+	display: flex;
+	flex-flow: row wrap;
+	justify-content: center;
+}
