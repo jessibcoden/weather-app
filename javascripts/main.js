@@ -2,7 +2,6 @@
 
 console.log("works!");
 
-let dom = require('./dom');
+let apiKeys = require('./apiKeys');
 
-dom.displayCurrentConditions();
-dom.displayForecast();
+apiKeys.retrieveKeys();
