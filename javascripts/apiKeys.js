@@ -16,8 +16,8 @@ const apiKeys = () => {
 const retrieveKeys = () => {
 	apiKeys().then((results) => {
 		owm.setKey(results.apiKeys.owm.APIKEY);
-		owm.searchCurrentWeather(37138);
-		owm.searchForecast(37138);
+		owm.searchCurrentWeather();
+		owm.searchForecast();
 	}).catch((error) => {
 		console.log("error in retrieveKeys", error);
 	});
