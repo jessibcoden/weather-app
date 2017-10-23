@@ -1,6 +1,5 @@
 "use strict";
 
-
 const displayCurrentConditions = (currentWeather) => {
 	let domString = `
 						<div class="card col-md-3 col-mid-offset-4.5" id="current-card">
@@ -23,24 +22,23 @@ const printCurrent = (strang) => {
 	$('.current-condition').append(strang);
 };
 
-const displayForecast = (forecast) => {
+const displayForecast = (weatherByDayArray) => {
 	let forecastString = '';
-	for(let i = 0; i < forecast.list.length; i++){
+	for(let i = 0; i < weatherByDayArray.length; i++){
 		forecastString += `
 						<div class="card" id="forecast-card">
 							<div class="day">
-								<h2>${forecast.list[i].dt_txt}</h2>
+								<h2>${weatherByDayArray[i].dayObject.day}, ${weatherByDayArray[i].dayObject.hour} </h2>
 							</div>
 							<div class="thumbnail">
-								<img src="http://openweathermap.org/img/w/${forecast.list[i].weather[0].icon}.png" alt="">
+								<img src="http://openweathermap.org/img/w/${weatherByDayArray[i].dayObject.icon}.png" alt="">
 							</div>
-							<h3 id="temp">${forecast.list[i].main.temp}&#176 F</h3>
-							<h4 id="forecast-condition">${forecast.list[i].weather[0].description}</h4>
-							<h4 id="current-wind">Wind Speed: ${forecast.list[i].wind.speed} mph</h4>
+							<h3 id="temp">${weatherByDayArray[i].dayObject.temp}&#176 F</h3>
+							<h4 id="forecast-condition">${weatherByDayArray[i].dayObject.description}</h4>
+							<h4 id="current-wind">Wind Speed: ${weatherByDayArray[i].dayObject.wind} mph</h4>
 						</div`;
 					}
 	printForecast(forecastString);
-
 };
 
 const printForecast = (strang) => {
