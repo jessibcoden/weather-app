@@ -30,17 +30,19 @@ module.exports = {retrieveKeys};
 
 const displayCurrentConditions = (currentWeather) => {
 	let domString = `
-						<div class="card col-md-3 col-mid-offset-4.5" id="current-card">
-							<div class="day">
-								<h2>Current Conditions</h2>
-							</div>
-							<div class="thumbnail">
-								<img src="http://openweathermap.org/img/w/${currentWeather.weather[0].icon}.png" alt="">
-							</div>
-							<h3 id="current-temp">${currentWeather.main.temp}&#176 F</h3>
-							<h4 id="current-condition">${currentWeather.weather[0].description}</h4>
-							<h4 id="current-pressure">Air Pressure: ${currentWeather.main.pressure} hPa</h4>
-							<h4 id="current-wind">Wind Speed: ${currentWeather.wind.speed} mph</h4>`;
+							<div class="card col-md-3 col-mid-offset-4.5" id="current-card">
+								<div class="day">			
+									<h2 id="city">${currentWeather.name}</h2>
+									<h2>Current Conditions</h2>
+								</div>
+								<div class="thumbnail">
+									<img src="http://openweathermap.org/img/w/${currentWeather.weather[0].icon}.png" alt="">
+								</div>
+								<h3 id="current-temp">${currentWeather.main.temp}&#176 F</h3>
+								<h4 id="current-condition">${currentWeather.weather[0].description}</h4>
+								<h4 id="current-pressure">Air Pressure: ${currentWeather.main.pressure} hPa</h4>
+								<h4 id="current-wind">Wind Speed: ${currentWeather.wind.speed} mph</h4>
+							</div>`;
 					
 
 	printCurrent(domString);
@@ -50,20 +52,20 @@ const printCurrent = (strang) => {
 	$('.current-condition').append(strang);
 };
 
-const displayForecast = (weatherByDayArray) => {
+const displayForecast = (resultDays) => {
 	let forecastString = '';
-	for(let i = 0; i < weatherByDayArray.length; i++){
+	for(let i = 0; i < resultDays.length; i++){
 		forecastString += `
 						<div class="card" id="forecast-card">
 							<div class="day">
-								<h2>${weatherByDayArray[i].dayObject.day}, ${weatherByDayArray[i].dayObject.hour} </h2>
+								<h2>${resultDays[i].dayOfTheWeek}</h2>
 							</div>
 							<div class="thumbnail">
-								<img src="http://openweathermap.org/img/w/${weatherByDayArray[i].dayObject.icon}.png" alt="">
+								<img src="http://openweathermap.org/img/w/${resultDays[i].icon}.png" alt="">
 							</div>
-							<h3 id="temp">${weatherByDayArray[i].dayObject.temp}&#176 F</h3>
-							<h4 id="forecast-condition">${weatherByDayArray[i].dayObject.description}</h4>
-							<h4 id="current-wind">Wind Speed: ${weatherByDayArray[i].dayObject.wind} mph</h4>
+							<h3 id="temp">${resultDays[i].main.temp}&#176 F</h3>
+							<h4 id="forecast-condition">${resultDays[i].weather.description}</h4>
+							<h4 id="current-wind">Wind Speed: ${resultDays[i].wind.speed} mph</h4>
 						</div`;
 					}
 	printForecast(forecastString);
@@ -76,6 +78,8 @@ const printForecast = (strang) => {
 module.exports = {displayCurrentConditions, displayForecast};
 },{}],3:[function(require,module,exports){
 "use strict";
+
+let resultDays = [];
 
 const owm = require('./weather');
 
@@ -90,6 +94,7 @@ const assignEventHandlers = (e) => {
 		e.preventDefault();
 		validateZip();
   	});
+  	
 };
 
 const validateZip = () => {
@@ -105,6 +110,27 @@ const validateZip = () => {
 	}
 };
 
+
+		// findDaysByTime(forecast);
+
+// const findDaysByTime = (forecast) => {
+// 	let calDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+// 	let startIndex = calDays.indexOf(currentWeather.dayOfWeek) + 1;
+// 	let endIndex3Day = calDays[startIndex + 3] ? startIndex + 3 : calDays.length % 3;
+// 	let forecastDays = calDays.slice(startIndex, endIndex3Day);
+// 	for (let i = 0; i < forecastDays.length; i++) {
+// 		var dayOfWeek = forecastDays[i];
+// 		var dayArray = forecast[dayOfWeek];
+// 		var day;
+// 		for (let i = 0; i < dayArray.length; i++) {
+// 			if (dayArray[i].time === '12:00 pm') {
+// 				day = dayArray[i];
+// 			}
+// 		}
+// 		resultDays.push(day);
+// 	}
+// 	console.log("resultDays", resultDays);
+// };
 
 module.exports = {assignEventHandlers};
 
@@ -124,7 +150,10 @@ apiKeys.retrieveKeys();
 "use strict";
 
 let currentWeather = [];
-let forecast = [];
+let forecastData = [];
+let forecast = {};
+
+let forecastHour;
 let owmKey;
 let iconConfig;
 
@@ -150,12 +179,12 @@ const searchForecastApi = (query) => {
 	});
 };
 
-
 const searchCurrentWeather = (query) => {
 	//execute searchWeather
 	searchCurrentApi(query).then((data) => {
 		console.log("searchCurrentWeather data", data);
 		currentWeather = data;
+		currentWeather.dayOfWeek = moment.unix(currentWeather.dt).format('dddd');
 		dom.displayCurrentConditions(currentWeather);
 	}).catch((error) => {
 		console.log("error in searchCurrentWeather", error);
@@ -166,47 +195,48 @@ const searchForecast = (query) => {
 	//execute searchWeather
 	searchForecastApi(query).then((data) => {
 		// showResults(data);
+		forecastData = data;
+		convertDateInfo(forecastData);
+		removeCurrentDayFromForecast(forecastData);
+		groupForecastByDay(forecastData);
+
 		console.log("searchForecast data", data);
-		forecast = data;
-		splitForcastData(forecast);
+		// makeNewForecastArray(forecast);
 	}).catch((error) => {
 		console.log("error in searchForecast", error);
 	});
 };
 
-// function makeArrayOfObjectsForEach3HourSpan(forecastObject) {
-//     var arrayOfObjects = []
-//         for (var i = 0; i < forecastObject.list.length; i++) {
-//         let weatherObject = {};
-//         weatherObject.day = new Date(forecastObject.list[i].dt_txt).getDay();
-//         weatherObject.hour = new Date(forecastObject.list[i].dt_txt).getHours();
-//         weatherObject.icon = `<i class="wi wi-owm-${forecastObject.list[i].weather[0].id}"></i>`
-//         weatherObject.temp = forecastObject.list[i].main.temp.toFixed(0);
-//         weatherObject.description = forecastObject.list[i].weather[0].description;
-//         weatherObject.dt_txt = forecastObject.list[i].dt_txt
-//         arrayOfObjects.push(weatherObject)
-//     }
-//     buildstring += `<div class = "weatherForecast">`
-//     makeCards(arrayOfObjects);
-//     buildstring += `</div>`
-//     weatherOutputContainer.innerHTML = buildstring;
-// }
-const splitForcastData = (forecast) => {
-	let weatherByDayArray = [];
-	for (let i = 0; i < forecast.list.length; i++) {
-		console.log("i", forecast.list[i].dt_txt);
-		let dayObject = {};
-		dayObject.day = new Date(forecast.list[i].dt_txt).getDay();
-		dayObject.hour = new Date(forecast.list[i].dt_text).getHours();
-		dayObject.icon = forecast.list[i].weather[0].icon;
-		dayObject.temp = forecast.list[i].main.temp.toFixed(0);
-		dayObject.description = forecast.list[i].weather[0].description;
-		dayObject.wind = forecast.list[i].wind.speed.toFixed(0);
-		weatherByDayArray.push(dayObject);
+const convertDateInfo = (forecastData) => {
+	for (let i = 0; i < forecastData.list.length; i++) {
+		forecastData.list[i].date = moment(forecastData.list[i].dt_txt).toDate('YYYY MM DD');
+		forecastData.list[i].time = moment(forecastData.list[i].dt_txt).format('h:mm a');
+		forecastData.list[i].dayOfWeek = moment(forecastData.list[i].dt_txt).format('dddd');
 	}
-	console.log("weatherByDayArray", weatherByDayArray);
-	dom.displayForecast(weatherByDayArray);
 };
+
+const removeCurrentDayFromForecast = (forecastData) => {
+	for (let i = 0; i < forecastData.list.length; i++) {
+		if(forecastData.list[i].dayOfWeek === currentWeather.dayOfWeek) {
+			forecastData.list[i] = {};
+		}
+	}
+};
+
+const groupForecastByDay = (forecastData) => {
+	for (let i = 0; i < forecastData.list.length; i++) {
+		var obj = forecastData.list[i];
+		var day = obj.dayOfWeek;
+		// delete obj.dayOfWeek;
+		if (forecast[day]) {
+			forecast[day].push(obj);
+		} else {
+			forecast[day] = [obj];
+		}
+	}
+	console.log("forecast", forecast);
+};
+
 
 const setKey = (APIKEY) => {
 	// sets omwKey

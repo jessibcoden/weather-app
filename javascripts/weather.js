@@ -1,7 +1,10 @@
 "use strict";
 
 let currentWeather = [];
-let forecast = [];
+let forecastData = [];
+let forecast = {};
+
+let forecastHour;
 let owmKey;
 let iconConfig;
 
@@ -27,12 +30,12 @@ const searchForecastApi = (query) => {
 	});
 };
 
-
 const searchCurrentWeather = (query) => {
 	//execute searchWeather
 	searchCurrentApi(query).then((data) => {
 		console.log("searchCurrentWeather data", data);
 		currentWeather = data;
+		currentWeather.dayOfWeek = moment.unix(currentWeather.dt).format('dddd');
 		dom.displayCurrentConditions(currentWeather);
 	}).catch((error) => {
 		console.log("error in searchCurrentWeather", error);
@@ -43,47 +46,48 @@ const searchForecast = (query) => {
 	//execute searchWeather
 	searchForecastApi(query).then((data) => {
 		// showResults(data);
+		forecastData = data;
+		convertDateInfo(forecastData);
+		removeCurrentDayFromForecast(forecastData);
+		groupForecastByDay(forecastData);
+
 		console.log("searchForecast data", data);
-		forecast = data;
-		splitForcastData(forecast);
+		// makeNewForecastArray(forecast);
 	}).catch((error) => {
 		console.log("error in searchForecast", error);
 	});
 };
 
-// function makeArrayOfObjectsForEach3HourSpan(forecastObject) {
-//     var arrayOfObjects = []
-//         for (var i = 0; i < forecastObject.list.length; i++) {
-//         let weatherObject = {};
-//         weatherObject.day = new Date(forecastObject.list[i].dt_txt).getDay();
-//         weatherObject.hour = new Date(forecastObject.list[i].dt_txt).getHours();
-//         weatherObject.icon = `<i class="wi wi-owm-${forecastObject.list[i].weather[0].id}"></i>`
-//         weatherObject.temp = forecastObject.list[i].main.temp.toFixed(0);
-//         weatherObject.description = forecastObject.list[i].weather[0].description;
-//         weatherObject.dt_txt = forecastObject.list[i].dt_txt
-//         arrayOfObjects.push(weatherObject)
-//     }
-//     buildstring += `<div class = "weatherForecast">`
-//     makeCards(arrayOfObjects);
-//     buildstring += `</div>`
-//     weatherOutputContainer.innerHTML = buildstring;
-// }
-const splitForcastData = (forecast) => {
-	let weatherByDayArray = [];
-	for (let i = 0; i < forecast.list.length; i++) {
-		console.log("i", forecast.list[i].dt_txt);
-		let dayObject = {};
-		dayObject.day = new Date(forecast.list[i].dt_txt).getDay();
-		dayObject.hour = new Date(forecast.list[i].dt_text).getHours();
-		dayObject.icon = forecast.list[i].weather[0].icon;
-		dayObject.temp = forecast.list[i].main.temp.toFixed(0);
-		dayObject.description = forecast.list[i].weather[0].description;
-		dayObject.wind = forecast.list[i].wind.speed.toFixed(0);
-		weatherByDayArray.push(dayObject);
+const convertDateInfo = (forecastData) => {
+	for (let i = 0; i < forecastData.list.length; i++) {
+		forecastData.list[i].date = moment(forecastData.list[i].dt_txt).toDate('YYYY MM DD');
+		forecastData.list[i].time = moment(forecastData.list[i].dt_txt).format('h:mm a');
+		forecastData.list[i].dayOfWeek = moment(forecastData.list[i].dt_txt).format('dddd');
 	}
-	console.log("weatherByDayArray", weatherByDayArray);
-	dom.displayForecast(weatherByDayArray);
 };
+
+const removeCurrentDayFromForecast = (forecastData) => {
+	for (let i = 0; i < forecastData.list.length; i++) {
+		if(forecastData.list[i].dayOfWeek === currentWeather.dayOfWeek) {
+			forecastData.list[i] = {};
+		}
+	}
+};
+
+const groupForecastByDay = (forecastData) => {
+	for (let i = 0; i < forecastData.list.length; i++) {
+		var obj = forecastData.list[i];
+		var day = obj.dayOfWeek;
+		// delete obj.dayOfWeek;
+		if (forecast[day]) {
+			forecast[day].push(obj);
+		} else {
+			forecast[day] = [obj];
+		}
+	}
+	console.log("forecast", forecast);
+};
+
 
 const setKey = (APIKEY) => {
 	// sets omwKey
