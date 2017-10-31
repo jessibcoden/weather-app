@@ -5,5 +5,5 @@ console.log("works!");
 let apiKeys = require('./apiKeys');
 let events = require('./events');
 
-events.assignEventHandlers();
+events.assignOnLoadEventHandlers();
 apiKeys.retrieveKeys();
